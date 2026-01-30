@@ -20,7 +20,8 @@ The architecture prioritises:
 
 ## 2. High-Level Component Structure (Conceptual)
 
-```[ Client (Web / Mobile) ]
+```
+[ Client (Web / Mobile) ]
 |
 v
 [ API Layer ]
@@ -46,7 +47,8 @@ Service --> Domain
 Domain --> DB
 
 DB --> Auth
-DB --> Payment```
+DB --> Payment
+```
 
 
 \* Other payment providers were considered at the design level and reflected in service wireframes.
@@ -81,10 +83,12 @@ without creating duplicate user accounts.
 
 Conceptually:
 
-```User
+```
+User
 ├── Email Credentials
 ├── Kakao Account
-└── Naver Account```
+└── Naver Account
+```
 
 This approach ensures consistent user identification and simplifies downstream domain logic such as rentals, vouchers, and payments.
 
