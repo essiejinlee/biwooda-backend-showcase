@@ -130,6 +130,8 @@ Response:
 - `200 OK`: Account deleted
 - `401 Unauthorized`: Authentication failure
 
+---
+
 ## 4. Social Login APIs (Kakao)
 
 ### 4.1 Redirect to Kakao OAuth
