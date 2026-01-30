@@ -28,7 +28,7 @@ When a user initiates a payment, the backend creates a temporary payment state a
 ---
 
 ### 4.2 Payment Approval
-After the user completes payment on the Kakao Pay page, the backend receives a payment approval request containing a provider-issued token. The system verifies the payment result and transitions the payment state to APPROVED. Only after successful payment approval is the corresponding rental activated and marked as RENTED.
+After the user completes payment on the Kakao Pay page, the backend receives a payment approval request containing a provider-issued token. The system verifies the payment result and transitions the payment state to `APPROVED`. Only after successful payment approval is the corresponding rental activated and marked as `RENTED`.
 
 Payment approval and rental activation are treated as a single logical transaction. If payment approval fails, the rental state is not activated.
 
@@ -40,7 +40,7 @@ If the user cancels the payment or if the payment fails, the backend rolls back 
 ---
 
 ## 5. Rental Return Logic
-Returning an umbrella is only allowed when a valid active rental exists. The backend verifies the locker code and rental state before completing the return. Upon successful return, the rental state is updated to RETURNED and the umbrella is marked as available again. Invalid return attempts, such as returning an umbrella that was not rented or returning to an invalid locker, are rejected.
+Returning an umbrella is only allowed when a valid active rental exists. The backend verifies the locker code and rental state before completing the return. Upon successful return, the rental state is updated to `RETURNED` and the umbrella is marked as available again. Invalid return attempts, such as returning an umbrella that was not rented or returning to an invalid locker, are rejected.
 
 ---
 
