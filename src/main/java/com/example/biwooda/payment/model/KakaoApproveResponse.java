@@ -14,7 +14,7 @@ public class KakaoApproveResponse {
     private String created_at; // Payment request timestamp
     private String approved_at; // Payment approval timestamp
 
-    public String getTid(){ return tid; }
+    public String getTid() { return tid; }
     public String getSid() { return sid; }
 
     public KakaoPayAmount getAmount(){

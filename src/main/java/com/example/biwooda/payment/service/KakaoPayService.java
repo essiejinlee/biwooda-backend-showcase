@@ -15,6 +15,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 
+import java.net.http.HttpHeaders;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -31,82 +32,81 @@ public class KakaoPayService {
         this.firestoreService = firestoreService;
     }
 
-    //kakaoPay key
+    // KakaoPay admin key
     @Value("${pay.kakao-admin-key}")
     private String adminKey;
 
-    //클라이언트의 결제창을 응답으로 받기 위한 메소드
-    //request: 상품 정보 / response: tid(결제 고유 번호) & 결제 URL
+    // Initialize payment and return the payment page redirect URL
+    // Request: item information
+    // Response: transaction ID (tid) and payment redirect URL
     @Transactional
     public KakaoReadyResponse getRedirectUrl(String idToken, KakaoPayItemInfo item) throws  Exception{
-        //사용자 uid 가져오기
-        //FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-        //String uid = decodedToken.getUid();
-        String uid = "u8N6Q6pYULfUfbo0tlqFw3ET3zq1";
+        // Retrieve user UID from Firebase ID Token
+        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+        String uid = decodedToken.getUid();
 
-        //이미 대여중인 사용자인지 확인
+        // Check whether the user already has an active rental
         CompletableFuture<Boolean> future = firestoreService.isAlreadyBorrow(uid);
-        boolean userExists = future.get(); // 여기서 CompletableFuture를 완료할 때까지 대기하고 결과를 가져옵니다.
+        boolean userExists = future.get(); // Wait for the async check to complete
 
         if (userExists) {
             throw new AlreadyBorrowedException();
         }
 
-        //아니라면, 계속 진행
+        // Proceed with payment initialisation
         HttpHeaders headers = new HttpHeaders();
 
-        //요청 header
+        // Configure request headers
         String auth = "KakaoAK " + adminKey;
         headers.set("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
         headers.set("Authorization", auth);
 
-        //요청 body
+        // Build request body
         KakaoPayRequest request = makePayRequest.getReadyRequest(uid, item);
 
-        //Header와 Body 합쳐서 RestTemplate로 보내기 위한 밑작업
+        // Combine headers and body for RestTemplate
         HttpEntity<MultiValueMap<String, String>> urlRequest = new HttpEntity<>(request.getParameters(), headers);
         System.out.println(urlRequest);
 
-        /** RestTemplate로 Response 받아와서 DTO로 변환후 return */
+        // Send request to KakaoPay and map the response to DTO
         RestTemplate rt = new RestTemplate();
         KakaoReadyResponse response = rt.postForObject(request.getUrl(), urlRequest, KakaoReadyResponse.class);
         System.out.println(response);
 
-        //Firestore에 TID 저장
+        // Store tid in Firestore
         assert response != null;
         firestoreService.addTid(uid, response.getTid(), response);
 
         return response;
     }
 
-    //클라이언트의 결제 승인 요청 메소드
+    // Handle payment approval request from the client
     @Transactional
     public KakaoApproveResponse getApprove(String pgToken, String idToken) throws Exception {
-        //사용자 uid, tid 가져오기
-        //FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-        //String uid = decodedToken.getUid();
-        String uid = "u8N6Q6pYULfUfbo0tlqFw3ET3zq1";
+        // Retrieve user uid and tid
+        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+        String uid = decodedToken.getUid();
         String tid = firestoreService.getTid(uid);
 
         HttpHeaders headers = new HttpHeaders();
 
-        //요청 header
+        // Configure request headers 
         String auth = "KakaoAK " + adminKey;
         headers.set("Content-type", "application/x-www-form-urlencoded;charset=utf-8");
         headers.set("Authorization", auth);
 
-        /** 요청 Body */
+        // Build request body 
         KakaoPayRequest request=makePayRequest.getApproveRequest(uid, tid, pgToken);
 
 
-        /** Header와 Body 합쳐서 RestTemplate로 보내기 위한 밑작업 */
+        // Combine headers and body for RestTemplate
         HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(request.getParameters(), headers);
 
-        // 요청 보내기
+        // Send approval request
         RestTemplate rt = new RestTemplate();
         KakaoApproveResponse approveData = rt.postForObject(request.getUrl(), requestEntity, KakaoApproveResponse.class);
 
-        //Firestore에 결제 정보 저장
+        // Persist approved payment data
         assert approveData != null;
         firestoreService.addApproveData(uid, pgToken, approveData);
         firestoreService.saveSid(uid, approveData);
@@ -114,23 +114,21 @@ public class KakaoPayService {
         return approveData;
     }
 
-    //결제 취소
+    // Handle payment cancellation
     public void cancelReady(String idToken) throws Exception {
-        //사용자 uid, tid 가져오기
-        //FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-        //String uid = decodedToken.getUid();
-        String uid = "u8N6Q6pYULfUfbo0tlqFw3ET3zq1";
+        // Retrieve user uid and tid
+        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+        String uid = decodedToken.getUid();
         String tid = firestoreService.getTid(uid);
 
         firestoreService.updateReadyCancel(uid, tid);
     }
 
-    //결제 실패
+    // Handle payment failure
     public void failReady(String idToken) throws Exception {
-        //사용자 uid, tid 가져오기
-        //FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-        //String uid = decodedToken.getUid();
-        String uid = "u8N6Q6pYULfUfbo0tlqFw3ET3zq1";
+        // Retrieve user uid and tid
+        FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
+        String uid = decodedToken.getUid();
         String tid = firestoreService.getTid(uid);
 
         firestoreService.updateReadyFailed(uid, tid);
