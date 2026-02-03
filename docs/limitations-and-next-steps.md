@@ -8,18 +8,24 @@ This document outlines the current limitations of the umbrella rental service pr
 ## 2. Current Limitations
 
 ### 2.1 Functional Limitations
-- The admin panel for monitoring rentals, payments, and user activity is defined in wireframes but not yet implemented.
-- Voucher functionality is designed but not fully implemented in the current backend.
+- The admin panel for monitoring rentals, payments, and user activity is defined in wireframes and reserved for future implementation.
+- Voucher functionality is defined at the design level but excluded from the current implementation scope.
 - While multiple payment methods were considered in the design (Kakao Pay, Naver Pay, Credit/Debit Cards), only Kakao Pay has been implemented.
 
+For demonstration purposes, certain authentication and payment flows were intentionally simplified:
+- Admin identification logic was implemented as a proof-of-concept and does not represent a production-ready authorization model.
+- OAuth2 login flows focus on account linking and token issuance rather than full session management.
+
+These decisions were made to prioritise backend architecture, domain modeling, and payment flow consistency within the project scope.
+
 ### 2.2 Deployment and Integration
-- The project is not configured for full production deployment.
+- - The project is not configured for full production deployment, as the primary goal was to demonstrate backend design and payment flow integration rather than operational readiness.
 - External dependencies, such as Firebase and Kakao Pay, are partially stubbed or mocked in development/testing.
 - Logging, monitoring, and alerting mechanisms are not fully implemented.
 
 ### 2.3 Testing
 - Automated unit and integration tests exist only for select services.
-- End-to-end testing with real users and full payment flow has not been completed.
+- End-to-end testing with real users and full payment flow has not been completed, and is considered a key next step before production readiness.
 
 ---
 

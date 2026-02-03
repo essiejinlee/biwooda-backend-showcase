@@ -35,11 +35,26 @@ Admin features were designed at the wireframe and specification level but were n
 
 ## 3. Authentication Design
 
-The service was designed to support multiple authentication methods, including email-based registration and Single Sign-On (SSO) via Kakao and Naver.
+The service implements a multi-provider authentication system supporting both email-based authentication and OAuth2-based social login.
 
-The backend follows a unified user account model, allowing different authentication providers to be linked to a single user identity.
+### Email-Based Authentication
+- Users can sign up using email and password
+- Email ownership is verified through verification codes
+- Password reset is handled using secure token-based flows
+- Authentication responses are standardized using dedicated response DTOs
 
-Email-based authentication and core SSO flows were implemented, with provider-specific logic abstracted behind a common authentication layer to ensure consistency and extensibility.
+## OAuth2 Social Login (Kakao / Naver)
+- OAuth2 Authorization Code flow is used for social authentication
+- Authentication requests are routed to provider-specific services via Spring Security
+- External provider user IDs are mapped to a unified internal user identity
+- Firebase custom tokens are generated after successful OAuth authentication
+- Firebase Authentication is used as a centralized authentication layer
+- User records are created and managed in Firestore
+
+## Security Considerations
+- OAuth state parameters are used to prevent CSRF attacks
+- Sensitive tokens are handled server-side and not exposed unnecessarily
+- Authentication responses follow consistent success and error structures
 
 ---
 
@@ -71,9 +86,16 @@ Payment flows were designed to allow users to choose between multiple payment me
 
 At the implementation stage, Kakao Pay was integrated as the primary payment provider.
 
-The backend initiates payment requests, records payment results, and maintains consistency between payment status and rental records.
+The backend implements the full payment lifecycle, including:
+- Payment initialization (ready)
+- Client redirection handling
+- Payment approval confirmation
+- Payment cancellation
+- Payment failure handling
 
-Other payment methods were considered at the design level and reflected in the service wireframes, allowing the system to be extended in the future.
+Payment results are synchronised with rental state transitions to ensure consistency between payment status and service usage.
+
+Other payment methods were considered at the design level and reflected in the service wireframes, allowing the system to be integrated in the future without major architectural changes.
 
 ---
 
@@ -81,6 +103,7 @@ Other payment methods were considered at the design level and reflected in the s
 
 - Operating hours: 08:00 – 20:00
 - Rentals and returns are only permitted within operating hours
+- Authentication and verification must be completed before rental
 - Vouchers and payments are validated before rental completion
 - Invalid actions are rejected at the backend level
 
@@ -99,7 +122,7 @@ Based on these wireframes, backend responsibilities were derived, including:
 - Voucher application logic
 - Payment flow handling
 
-The implementation prioritised stable user-facing functionality while maintaining a backend structure that can support future admin features.
+The implementation prioritised stable user-facing functionality while maintaining a backend structure that can support future administrative features.
 
 ---
 

@@ -29,15 +29,13 @@ The backend does not expose provider-specific details directly to clients, allow
 ### 4.1 Payment Initialization
 When a user initiates a rental payment, the backend performs eligibility checks before contacting the payment provider:
 - The user does not have an active rental
-- An umbrella is available for rental
-- The request is valid within the current domain state
 
 Only after these checks pass does the backend request a payment session from Kakao Pay and transition the payment state to `READY`.
 
 ---
 
 ### 4.2 Payment Approval
-After the user completes payment on the Kakao Pay interface, the backend receives a provider-issued approval token. The system verifies the payment result and transitions the payment state to `APPROVED`. Upon successful approval, the corresponding rental is activated and marked as `RENTED`.
+After the user completes payment on the Kakao Pay interface, the backend receives a provider-issued approval token. The system verifies the payment result and transitions the payment state to `APPROVED`. Upon successful approval, rental-related recordds are persisted.
 
 Payment approval and rental activation are treated as a single logical transaction to prevent partial state updates.
 
@@ -53,21 +51,11 @@ This ensures that interrupted payment flows do not result in inconsistent or par
 
 ---
 
-### 4.4 Refund and Rental Cancellation
-Refunds are allowed only for approved payments associated with active rentals. When a rental is cancelled:
-- The payment state transitions to `REFUNDED`
-- The umbrella is released back to the available pool
-- Rental records are updated accordingly
-
-Refund operations are validated to prevent duplicate or invalid refunds.
-
----
-
 ## 5. State Management
 
 ### 5.1 Payment State Transitions
 ```
-READY → APPROVED → REFUNDED
+READY → APPROVED → REFUNDED (design-level)
 ↘
 CANCELLED / FAILED
 ```
@@ -77,7 +65,7 @@ Invalid state transitions are explicitly rejected by the backend.
 ---
 
 ### 5.2 Synchronisation with Rental State
-- A rental cannot enter the `RENTED` state unless payment is `APPROVED`
+- Rental-related records are only created after payment approval.
 - Rental cancellation triggers payment refund where applicable
 - Payment failures do not activate rental records
 

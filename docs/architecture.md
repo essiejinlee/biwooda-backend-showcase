@@ -96,7 +96,8 @@ This approach ensures consistent user identification and simplifies downstream d
 
 ### 4.2 Authentication Flow
 
-Spring Security OAuth2 is used as a single entry point for all social login requests.
+Spring Security OAuth2 concepts were used to structure social login handling.
+Provider-specific OAuth flows are currently handled via dedicated controllers, with OAuth2 user services prepared for future integration.
 
 When a user initiates a social login:
 1. The client sends a login request to the backend
@@ -116,10 +117,7 @@ This approach centralises authentication control and avoids scattering provider-
 
 ### 5.1 Rental Domain
 
-The rental domain is responsible for:
-- Managing umbrella availability
-- Creating and terminating rental records
-- Enforcing valid rental state transitions
+Rental-related state is managed as part of the payment flow, with rental records persisted after successful payment approval.
 
 Rental states are explicitly controlled to prevent invalid transitions (e.g. returning an umbrella that was not rented).
 
@@ -141,7 +139,7 @@ This domain was defined at the design level to support future discount and promo
 The payment domain coordinates:
 - Payment request initiation
 - Payment result handling
-- Synchronisation between payment status and rental records
+- Synchronisation between payment status and rental-related records
 
 At the implementation stage, Kakao Pay was integrated as the primary payment provider.
 
@@ -153,7 +151,7 @@ The payment structure allows additional providers to be integrated with minimal 
 ## 6. External Integration Strategy
 
 ### Authentication Providers
-- Email-based authentication is handled internally
+- Email-based authentication is handled via Firebase Authentication
 - Social login providers (Kakao, Naver) are integrated via Spring Security OAuth2 and provider-specific user services
 
 ### Payment Providers
@@ -167,7 +165,7 @@ The payment structure allows additional providers to be integrated with minimal 
 The backend enforces:
 - Valid rental and return state transitions
 - Consistent payment and rental states
-- Validation of vouchers and operating policies
+- Validation of rental, payment, and other designed policies
 - Rejection of invalid or out-of-policy actions
 
 All critical decisions are enforced at the backend level to maintain data integrity regardless of client behaviour.

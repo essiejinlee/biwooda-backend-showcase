@@ -13,8 +13,7 @@ All authenticated actions require a valid Firebase ID Token supplied via the Aut
 ## 3. Rental Eligibility Rules
 Before a rental can be initiated, the system validates the following conditions:
 - The user does not already have an active rental.
-- At least one umbrella is available at the selected locker.
-- The requested operation is allowed within the current rental state.
+- The requested operation does not violate existing rental or payment records.
 
 If any of these conditions fail, the request is rejected and the rental process is not started. Domain-specific exceptions are used to explicitly represent these invalid states.
 
@@ -28,19 +27,19 @@ When a user initiates a payment, the backend creates a temporary payment state a
 ---
 
 ### 4.2 Payment Approval
-After the user completes payment on the Kakao Pay page, the backend receives a payment approval request containing a provider-issued token. The system verifies the payment result and transitions the payment state to `APPROVED`. Only after successful payment approval is the corresponding rental activated and marked as `RENTED`.
+After the user completes payment on the Kakao Pay page, the backend receives a payment approval request containing a provider-issued token. The system verifies the payment result and transitions the payment state to `APPROVED`. Only after successful payment approval are rental-related records persisted.
 
 Payment approval and rental activation are treated as a single logical transaction. If payment approval fails, the rental state is not activated.
 
 ---
 
 ### 4.3 Payment Cancellation and Failure
-If the user cancels the payment or if the payment fails, the backend rolls back any temporary payment or rental state. This prevents partially completed rentals and ensures that system state remains consistent even when external payment flows are interrupted.
+If the user cancels the payment or if the payment fails, the backend rolls back any temporary payment-related state. This prevents partially completed rentals and ensures that system state remains consistent even when external payment flows are interrupted.
 
 ---
 
 ## 5. Rental Return Logic
-Returning an umbrella is only allowed when a valid active rental exists. The backend verifies the locker code and rental state before completing the return. Upon successful return, the rental state is updated to `RETURNED` and the umbrella is marked as available again. Invalid return attempts, such as returning an umbrella that was not rented or returning to an invalid locker, are rejected.
+Rental return logic was designed as part of the overall service flow but was not implemented within the current project scope.
 
 ---
 

@@ -19,10 +19,13 @@ Authentication is handled using Firebase Authentication as the central identity 
 
 The system supports:
 - Email-based signup and login
-- Social login via Kakao and Naver (OAuth2)
+- Social login via Kakao and Naver (OAuth2 Authorization Code flow)
+- Firebase Custom Tokens for social login
 - Firebase ID Tokens for authenticated API access
 
-All authenticated endpoints expect a Firebase ID Token passed via the `Authorization: Bearer <token>` header.
+After successful social login, the backend issues a Firebase Custom Token.
+The client then exchanges this Custom Token for a Firebase ID Token using Firebase Authentication SDK.
+The Firebase ID Token is subsequently included in the Authorization header when accessing protected APIs.
 
 ---
 
@@ -74,18 +77,18 @@ Response:
 
 **POST** `/auth/login`
 
-Authenticates a user using a Firebase ID Token issued by the client.
+Validates a Firebase ID Token issued by the client and confirms user authentication status.
 
 Header:
 ```makefile
-Authorization: Bearer <Firebase ID Token>
+Authorization: Bearer <firebase_id_token>
 ```
 
 Response:
 ```json
 {
-  "token": "<Firebase ID Token>",
-  "message": "Login Successfully"
+  "token": "<firebase_id_token>",
+  "message": "Login Successful"
 }
 ```
 
@@ -123,7 +126,7 @@ Deletes the authenticated user's Firebase account and associated Firestore data.
 
 Header:
 ```makefile
-Authorization: Bearer <Firebase ID Token>
+Authorization: Bearer <firebase_id_token>
 ```
 
 Response:
@@ -157,7 +160,7 @@ Response:
 {
   "email": "user@example.com",
   "nickname": "nickname",
-  "firebaseToken": "<Firebase Custom Token>"
+  "firebaseToken": "<firebase_custom_token>"
 }
 ```
 
@@ -181,15 +184,15 @@ Initializes a Kakao Pay payment and returns a redirect URL for the payment page.
 
 Header:
 ```makefile
-Authorization: Bearer <Firebase ID Token>
+Authorization: Bearer <firebase_id_token>
 ```
 
 Request Body (example):
 ```json
 {
   "itemName": "Umbrella Rental",
-  "quantity": 1,
-  "totalAmount": 3000
+  "price": 3000,
+  "num": 1
 }
 ```
 
@@ -202,84 +205,23 @@ Responses:
 
 ### 5.2 Payment Success
 
-**POST** `/payment/success`
+**GET** `/payment/success/{id}`
 
-Finalizes payment approval using the `pg_token` returned by Kakao Pay.
-
-Header:
-```makefile
-Authorization: Bearer <Firebase ID Token>
-```
-
-Request Body:
-```json
-{
-  "pgToken": "pg_token_value"
-}
-```
+Handles the Kakao Pay redirect callback and finalizes payment approval using the `pg_token` returned by Kakao Pay
 
 Response:
-- `200 OK`: Payment approved and rental activated
+- `200 OK`: Payment approved and rental-related records are persisted
 - `500 Internal Server Error`: Approval failure
 
 ---
 
 ### 5.3 Payment Cancel / Fail
 
-**GET** `/payment/cancel`
-**GET** `/payment/fail`
+**GET** `/payment/cancel/{id}`
+**GET** `/payment/fail/{id}`
 
 Handles user-initiated cancellations or payment failures.
 Temporary payment state is rolled back to prevent inconsistent rentals.
-
----
-
-### 5.4 Cancel Rental (Refund)
-
-**POST**  `/payment/borrow-cancel`
-
-Cancels an active rental and issues a refund if applicable.
-
-Header:
-```makefile
-Authorization: Bearer <Firebase ID Token>
-```
-
-Request Body:
-```json
-{
-  "lockerCode": "LOCKER-001"
-}
-```
-
-Response:
-- `200 OK`: Rental canceled
-- `417 Expectation Failed`: No active rental found
-
----
-
-### 5.5 Return Umbrella
-
-**POST** `/payment/return`
-
-Completes the rental by returning the umbrella and updating the rental record.
-
-Header:
-```makefile
-Authorization: Bearer <Firebase ID Token>
-```
-
-Request Body:
-```json
-{
-  "lockerCode": "LOCKER-001"
-}
-```
-
-Responses:
-- `200 OK`: Return successful
-- `417 Expectation Failed`: Invalid return state
-- `500 Internal Server Error`: Processing failure
 
 ---
 
@@ -288,13 +230,14 @@ Responses:
 - Public endpoints: `/auth/**`
 - Protected endpoints: `/payment/**` and other domain APIs
 - Authentication enforced via Firebase ID Tokens
-- CSRF protection disabled for stateless API usage
+- Spring Security CSRF protection disabled for stateless API usage
 
 ---
 
 ## 7. Notes on Implementation Scope
 
-Some authentication token verification logic was simplified during development for testing purposes.
+Some authentication token verification and payment logic were simplified during development for testing purposes.
+
 In a production environment, all protected endpoints are designed to validate Firebase ID Tokens using `verifyIdToken`.
 
 This repository focuses on API structure, authentication flows, and payment-domain consistency rather than full production deployment.
